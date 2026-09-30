@@ -224,7 +224,7 @@
 <main>
   <header>
     <h1>Missed Call Cost Calculator</h1>
-    <p>See the full monthly cost of unanswered calls — lost bookings plus the staff time spent chasing them — and what a text-back system would put back in your pocket.</p>
+    <p>See what unanswered calls cost you in lost bookings every month, and what a text-back system would put back in your pocket.</p>
   </header>
 
   <section class="card" aria-label="Your numbers">
@@ -256,39 +256,25 @@
     </div>
 
     <div class="field">
-      <label class="field-label" for="followUpMinutes">
-        <span>Manual follow-up time</span>
-        <span id="followUpMinutesOut">8 min</span>
+      <label class="field-label" for="recoveryRate">
+        <span>Missed callers who'd reply to a text</span>
+        <span id="recoveryRateOut">30%</span>
       </label>
-      <input type="range" id="followUpMinutes" min="0" max="30" step="1" value="8">
-      <span class="field-hint">Minutes your team spends per callback attempt today.</span>
-    </div>
-
-    <div class="field">
-      <label class="field-label" for="hourlyRate">
-        <span>What your time is worth</span>
-        <span id="hourlyRateOut">$25/hr</span>
-      </label>
-      <input type="range" id="hourlyRate" min="0" max="150" step="5" value="25">
-      <span class="field-hint">Hourly value of whoever's chasing these callbacks.</span>
+      <input type="range" id="recoveryRate" min="0" max="100" step="5" value="30">
+      <span class="field-hint">Out of 10 voicemail callers, how many would text back?</span>
     </div>
   </section>
 
   <section class="results" aria-label="What this costs you">
     <div class="tile wide hero">
-      <span class="tile-label">Total cost / month</span>
+      <span class="tile-label">Revenue lost / month</span>
       <span class="tile-value" id="totalCostOut">$0</span>
       <span class="tile-sub" id="totalAnnualOut">$0 / year</span>
     </div>
-    <div class="tile">
-      <span class="tile-label">Revenue lost</span>
-      <span class="tile-value" id="monthlyLostOut">$0</span>
-      <span class="tile-sub">from missed bookings</span>
-    </div>
-    <div class="tile">
-      <span class="tile-label">Time cost</span>
-      <span class="tile-value" id="timeCostOut">$0</span>
-      <span class="tile-sub" id="hoursSavedOut">0 hrs of staff time</span>
+    <div class="tile wide hero">
+      <span class="tile-label">Revenue recovered / month</span>
+      <span class="tile-value" id="recoveredOut">$0</span>
+      <span class="tile-sub" id="recoveredAnnualOut">$0 / year with text-back</span>
     </div>
     <div class="tile wide">
       <span class="tile-label">Missed calls / month</span>
@@ -304,19 +290,16 @@
     var callsPerWeek = document.getElementById('callsPerWeek');
     var avgValue = document.getElementById('avgValue');
     var closeRate = document.getElementById('closeRate');
-    var followUpMinutes = document.getElementById('followUpMinutes');
-    var hourlyRate = document.getElementById('hourlyRate');
+    var recoveryRate = document.getElementById('recoveryRate');
+    var recoveryRateOut = document.getElementById('recoveryRateOut');
+    var recoveredOut = document.getElementById('recoveredOut');
+    var recoveredAnnualOut = document.getElementById('recoveredAnnualOut');
 
     var callsPerWeekOut = document.getElementById('callsPerWeekOut');
     var avgValueOut = document.getElementById('avgValueOut');
     var closeRateOut = document.getElementById('closeRateOut');
-    var followUpMinutesOut = document.getElementById('followUpMinutesOut');
-    var hourlyRateOut = document.getElementById('hourlyRateOut');
 
     var monthlyMissedOut = document.getElementById('monthlyMissedOut');
-    var monthlyLostOut = document.getElementById('monthlyLostOut');
-    var timeCostOut = document.getElementById('timeCostOut');
-    var hoursSavedOut = document.getElementById('hoursSavedOut');
     var totalCostOut = document.getElementById('totalCostOut');
     var totalAnnualOut = document.getElementById('totalAnnualOut');
     var basisOut = document.getElementById('basisOut');
@@ -336,20 +319,17 @@
       var calls = num(callsPerWeek);
       var value = num(avgValue);
       var rate = num(closeRate);
-      var minutes = num(followUpMinutes);
-      var rateHr = num(hourlyRate);
 
       var monthlyMissed = calls * WEEKS_PER_MONTH;
       var monthlyLost = monthlyMissed * (rate / 100) * value;
-      var hoursSaved = (monthlyMissed * minutes) / 60;
-      var timeCost = hoursSaved * rateHr;
-      var totalCost = monthlyLost + timeCost;
+      var recPct = num(recoveryRate);
+      var recovered = monthlyLost * (recPct / 100);
 
       return {
-        calls: calls, value: value, rate: rate, minutes: minutes, rateHr: rateHr,
+        recPct: recPct, recovered: recovered, recoveredAnnual: recovered * 12,
+        calls: calls, value: value, rate: rate,
         monthlyMissed: monthlyMissed, monthlyLost: monthlyLost,
-        hoursSaved: hoursSaved, timeCost: timeCost,
-        totalCost: totalCost, totalAnnual: totalCost * 12
+        totalAnnual: monthlyLost * 12
       };
     }
 
@@ -359,20 +339,18 @@
       callsPerWeekOut.textContent = r.calls;
       avgValueOut.textContent = money(r.value);
       closeRateOut.textContent = r.rate + '%';
-      followUpMinutesOut.textContent = r.minutes + ' min';
-      hourlyRateOut.textContent = money(r.rateHr) + '/hr';
 
       monthlyMissedOut.textContent = r.monthlyMissed.toFixed(1).replace(/\.0$/, '');
-      monthlyLostOut.textContent = money(r.monthlyLost);
-      timeCostOut.textContent = money(r.timeCost);
-      hoursSavedOut.textContent = r.hoursSaved.toFixed(1).replace(/\.0$/, '') + ' hrs of staff time';
-      totalCostOut.textContent = money(r.totalCost);
+      totalCostOut.textContent = money(r.monthlyLost);
       totalAnnualOut.textContent = money(r.totalAnnual) + ' / year';
+      recoveryRateOut.textContent = r.recPct + '%';
+      recoveredOut.textContent = money(r.recovered);
+      recoveredAnnualOut.textContent = money(r.recoveredAnnual) + ' / year with text-back';
 
-      basisOut.textContent = 'Revenue lost: ' + r.calls + ' missed calls/week × ' + r.rate + '% close rate × ' + money(r.value) + ' per job. Time cost: ' + r.minutes + ' min/call × ' + money(r.rateHr) + '/hr.';
+      basisOut.textContent = 'Revenue lost: ' + r.calls + ' missed calls/week × ' + r.rate + '% close rate × ' + money(r.value) + ' per job. Recovered: ' + r.recPct / 10 + ' of every 10 missed callers who would have booked.';
     }
 
-    [callsPerWeek, avgValue, closeRate, followUpMinutes, hourlyRate].forEach(function (el) {
+    [callsPerWeek, avgValue, closeRate, recoveryRate].forEach(function (el) {
       el.addEventListener('input', render);
     });
 
