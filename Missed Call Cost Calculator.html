@@ -1,0 +1,383 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Missed Call Cost Calculator</title>
+<style>
+  /*
+    Layout: single-column stacked tool — an inputs card feeding a results
+    card of big-number tiles, centered in a narrow column so it reads
+    the same on a phone as it does embedded in an email reply.
+  */
+  :root {
+    --bg: #0a0a0b;
+    --surface: #16171a;
+    --surface-2: #1e2024;
+    --border: #2b2d31;
+    --fg: #f2f2f3;
+    --fg-muted: #9a9ca3;
+    --accent: #3b82f6;
+    --accent-fg: #ffffff;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f6f6f7;
+      --surface: #ffffff;
+      --surface-2: #f0f1f3;
+      --border: #e2e3e6;
+      --fg: #18191b;
+      --fg-muted: #6b6e76;
+      --accent: #2563eb;
+      --accent-fg: #ffffff;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f6f7;
+    --surface: #ffffff;
+    --surface-2: #f0f1f3;
+    --border: #e2e3e6;
+    --fg: #18191b;
+    --fg-muted: #6b6e76;
+    --accent: #2563eb;
+    --accent-fg: #ffffff;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding-inline: 16px;
+    padding-block: 40px;
+    display: flex;
+    justify-content: center;
+  }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--fg-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .field-label span:last-child {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--fg);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    padding: 10px 12px;
+    font-family: inherit;
+  }
+
+  input[type="number"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+
+  input[type="range"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  .field-hint {
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+  }
+
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .tile.wide {
+    grid-column: 1 / -1;
+  }
+
+  .tile.hero {
+    border-color: var(--accent);
+  }
+
+  .tile-label {
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .tile-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    word-break: break-word;
+  }
+
+  .tile.hero .tile-value {
+    color: var(--accent);
+    font-size: 2rem;
+  }
+
+  .tile-sub {
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+  }
+
+  .basis {
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+    line-height: 1.6;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+
+  .basis strong {
+    color: var(--fg);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 380px) {
+    .results { grid-template-columns: 1fr; }
+    .tile.wide { grid-column: auto; }
+  }
+</style>
+
+<main>
+  <header>
+    <h1>Missed Call Cost Calculator</h1>
+    <p>See the full monthly cost of unanswered calls — lost bookings plus the staff time spent chasing them — and what a text-back system would put back in your pocket.</p>
+  </header>
+
+  <section class="card" aria-label="Your numbers">
+    <div class="field">
+      <label class="field-label" for="callsPerWeek">
+        <span>Missed calls per week</span>
+        <span id="callsPerWeekOut">5</span>
+      </label>
+      <input type="range" id="callsPerWeek" min="0" max="40" step="1" value="5">
+      <span class="field-hint">Calls that ring out or go to voicemail, any time of day.</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="avgValue">
+        <span>Average job value</span>
+        <span id="avgValueOut">$350</span>
+      </label>
+      <input type="number" id="avgValue" min="0" step="10" value="350" inputmode="numeric">
+      <span class="field-hint">What a typical booked customer is worth to you.</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="closeRate">
+        <span>Estimated close rate</span>
+        <span id="closeRateOut">25%</span>
+      </label>
+      <input type="range" id="closeRate" min="0" max="75" step="5" value="25">
+      <span class="field-hint">Share of missed calls that would've become paying jobs if answered.</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="followUpMinutes">
+        <span>Manual follow-up time</span>
+        <span id="followUpMinutesOut">8 min</span>
+      </label>
+      <input type="range" id="followUpMinutes" min="0" max="30" step="1" value="8">
+      <span class="field-hint">Minutes your team spends per callback attempt today.</span>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="hourlyRate">
+        <span>What your time is worth</span>
+        <span id="hourlyRateOut">$25/hr</span>
+      </label>
+      <input type="range" id="hourlyRate" min="0" max="150" step="5" value="25">
+      <span class="field-hint">Hourly value of whoever's chasing these callbacks.</span>
+    </div>
+  </section>
+
+  <section class="results" aria-label="What this costs you">
+    <div class="tile wide hero">
+      <span class="tile-label">Total cost / month</span>
+      <span class="tile-value" id="totalCostOut">$0</span>
+      <span class="tile-sub" id="totalAnnualOut">$0 / year</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Revenue lost</span>
+      <span class="tile-value" id="monthlyLostOut">$0</span>
+      <span class="tile-sub">from missed bookings</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Time cost</span>
+      <span class="tile-value" id="timeCostOut">$0</span>
+      <span class="tile-sub" id="hoursSavedOut">0 hrs of staff time</span>
+    </div>
+    <div class="tile wide">
+      <span class="tile-label">Missed calls / month</span>
+      <span class="tile-value" id="monthlyMissedOut">0</span>
+    </div>
+  </section>
+
+  <p class="basis" id="basisOut"></p>
+</main>
+
+<script>
+  (function () {
+    var callsPerWeek = document.getElementById('callsPerWeek');
+    var avgValue = document.getElementById('avgValue');
+    var closeRate = document.getElementById('closeRate');
+    var followUpMinutes = document.getElementById('followUpMinutes');
+    var hourlyRate = document.getElementById('hourlyRate');
+
+    var callsPerWeekOut = document.getElementById('callsPerWeekOut');
+    var avgValueOut = document.getElementById('avgValueOut');
+    var closeRateOut = document.getElementById('closeRateOut');
+    var followUpMinutesOut = document.getElementById('followUpMinutesOut');
+    var hourlyRateOut = document.getElementById('hourlyRateOut');
+
+    var monthlyMissedOut = document.getElementById('monthlyMissedOut');
+    var monthlyLostOut = document.getElementById('monthlyLostOut');
+    var timeCostOut = document.getElementById('timeCostOut');
+    var hoursSavedOut = document.getElementById('hoursSavedOut');
+    var totalCostOut = document.getElementById('totalCostOut');
+    var totalAnnualOut = document.getElementById('totalAnnualOut');
+    var basisOut = document.getElementById('basisOut');
+
+    var WEEKS_PER_MONTH = 52 / 12;
+
+    function num(el) {
+      var v = parseFloat(el.value);
+      return isNaN(v) || v < 0 ? 0 : v;
+    }
+
+    function money(n) {
+      return '$' + Math.round(n).toLocaleString('en-US');
+    }
+
+    function calculate() {
+      var calls = num(callsPerWeek);
+      var value = num(avgValue);
+      var rate = num(closeRate);
+      var minutes = num(followUpMinutes);
+      var rateHr = num(hourlyRate);
+
+      var monthlyMissed = calls * WEEKS_PER_MONTH;
+      var monthlyLost = monthlyMissed * (rate / 100) * value;
+      var hoursSaved = (monthlyMissed * minutes) / 60;
+      var timeCost = hoursSaved * rateHr;
+      var totalCost = monthlyLost + timeCost;
+
+      return {
+        calls: calls, value: value, rate: rate, minutes: minutes, rateHr: rateHr,
+        monthlyMissed: monthlyMissed, monthlyLost: monthlyLost,
+        hoursSaved: hoursSaved, timeCost: timeCost,
+        totalCost: totalCost, totalAnnual: totalCost * 12
+      };
+    }
+
+    function render() {
+      var r = calculate();
+
+      callsPerWeekOut.textContent = r.calls;
+      avgValueOut.textContent = money(r.value);
+      closeRateOut.textContent = r.rate + '%';
+      followUpMinutesOut.textContent = r.minutes + ' min';
+      hourlyRateOut.textContent = money(r.rateHr) + '/hr';
+
+      monthlyMissedOut.textContent = r.monthlyMissed.toFixed(1).replace(/\.0$/, '');
+      monthlyLostOut.textContent = money(r.monthlyLost);
+      timeCostOut.textContent = money(r.timeCost);
+      hoursSavedOut.textContent = r.hoursSaved.toFixed(1).replace(/\.0$/, '') + ' hrs of staff time';
+      totalCostOut.textContent = money(r.totalCost);
+      totalAnnualOut.textContent = money(r.totalAnnual) + ' / year';
+
+      basisOut.textContent = 'Revenue lost: ' + r.calls + ' missed calls/week × ' + r.rate + '% close rate × ' + money(r.value) + ' per job. Time cost: ' + r.minutes + ' min/call × ' + money(r.rateHr) + '/hr.';
+    }
+
+    [callsPerWeek, avgValue, closeRate, followUpMinutes, hourlyRate].forEach(function (el) {
+      el.addEventListener('input', render);
+    });
+
+    render();
+  })();
+</script>
+
+</body></html>
